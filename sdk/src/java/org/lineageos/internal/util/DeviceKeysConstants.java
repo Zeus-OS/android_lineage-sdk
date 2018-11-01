@@ -37,6 +37,7 @@ public class DeviceKeysConstants {
         LAST_APP,
         SPLIT_SCREEN,
         KILL_APP;
+        TORCH,
 
         public static Action fromIntSafe(int id) {
             if (id < NOTHING.ordinal() || id > Action.values().length) {
