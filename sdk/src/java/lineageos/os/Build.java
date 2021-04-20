@@ -28,10 +28,10 @@ public class Build {
     public static final String UNKNOWN = "unknown";
 
     /** A build ID utilized to distinguish lineageos versions */
-    public static final String CRDROID_VERSION = getString("ro.crdroid.version");
+    public static final String ZEUS_VERSION = getString("ro.zeus.version");
 
     /** A build ID string meant for displaying to the user */
-    public static final String CRDROID_DISPLAY_VERSION = getString("ro.crdroid.display.version");
+    public static final String ZEUS_DISPLAY_VERSION = getString("ro.zeus.display.version");
 
     private static final SparseArray<String> sdkMap;
     static
