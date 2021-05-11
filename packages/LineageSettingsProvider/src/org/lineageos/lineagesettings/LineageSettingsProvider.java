@@ -17,6 +17,9 @@
 
 package org.lineageos.lineagesettings;
 
+import static android.os.Process.ROOT_UID;
+import static android.os.Process.SHELL_UID;
+
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
@@ -27,8 +30,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.UriMatcher;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.IPackageManager;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Process;
 import android.content.pm.UserInfo;
+import android.os.RemoteCallback;
+import android.os.RemoteException;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
@@ -105,6 +114,8 @@ public class LineageSettingsProvider extends ContentProvider {
     private UserManager mUserManager;
     private Uri.Builder mUriBuilder;
     private SharedPreferences mSharedPrefs;
+
+    private volatile IPackageManager mPackageManager;
 
     @Override
     public boolean onCreate() {
@@ -382,13 +393,36 @@ public class LineageSettingsProvider extends ContentProvider {
     private void enforceWritePermission(String permission) {
         if (getContext().checkCallingOrSelfPermission(permission)
                 != PackageManager.PERMISSION_GRANTED) {
-            throw new SecurityException(
-                    String.format("Permission denial: writing to settings requires %s",
-                            permission));
+            throw new SecurityException("Permission denial: " + resolveCallingPackage()
+                    + " writing to settings requires:"
+                    + permission);
         }
     }
 
-    // Helper for call() CALL_METHOD_DELETE_* methods
+    private String resolveCallingPackage() {
+        switch (Binder.getCallingUid()) {
+            case Process.ROOT_UID: {
+                return "root";
+            }
+
+            case Process.SHELL_UID: {
+                return "com.android.shell";
+            }
+
+            default: {
+                return getCallingPackage();
+            }
+        }
+    }
+        private PackageInfo getCallingPackageInfo(int userId) {
+        try {
+            return mPackageManager.getPackageInfo(getCallingPackage(),
+                    PackageManager.GET_SIGNATURES, userId);
+        } catch (RemoteException e) {
+            throw new IllegalStateException("Package " + getCallingPackage() + " doesn't exist");
+        }
+    }
+// Helper for call() CALL_METHOD_DELETE_* methods
     private Bundle callHelperDelete(int callingUserId, Uri contentUri, String key) {
         final int rowsDeleted = deleteForUser(callingUserId, contentUri, NAME_SELECTION,
                 new String[]{ key });
